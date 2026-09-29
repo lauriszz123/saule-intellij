@@ -174,6 +174,22 @@ The indent model tests need no IDE fixture:
 ./gradlew test
 ```
 
+## Versioning
+
+The plugin version tracks the toolchain it targets — `<year>.<build>`, the
+same number `saule --version` prints. It has to be written into three files
+that must agree (`gradle.properties`, `plugin.xml`, and the scaffolder's
+`SAULE_VERSION`), so one script writes all three:
+
+```bash
+scripts/stamp-version.sh 26.8
+scripts/stamp-version.sh 26.8 --check   # verify, change nothing
+```
+
+Run the stamp before `buildPlugin`, and `--check` in CI — it turns "edited one
+manifest and forgot the other" into a failed job rather than a Marketplace
+listing that disagrees with the toolchain.
+
 ## Toolchain discovery
 
 Both binaries (`saule`, `saule-lsp`) are located the same way — first hit wins:

@@ -2,7 +2,7 @@
     <id>com.saule.lang</id>
     <name>Saule</name>
     <version>26.1</version>
-    <vendor url="https://github.com/">Saule</vendor>
+    <vendor url="https://github.com/lauriszz123/saule">Saule</vendor>
 
     <description><![CDATA[
         <p>Language support for the <b>Saule</b> programming language

@@ -1,10 +1,10 @@
 # Saule for IntelliJ IDEA
 
-JetBrains plugin for the [Saule](../../README.md) programming language (`.sau`):
-native **syntax highlighting**, the full **`saule-lsp` language server**
-(diagnostics, hover, go-to-definition, find usages, document symbols, inlay
-hints, signature help, and formatting), plus **New Project scaffolding** and
-**Run configurations**.
+JetBrains plugin for the [Saule](https://github.com/lauriszz123/saule)
+programming language (`.sau`): native **syntax highlighting**, the full
+**`saule-lsp` language server** (diagnostics, hover, go-to-definition, find
+usages, document symbols, inlay hints, signature help, and formatting), plus
+**New Project scaffolding** and **Run configurations**.
 
 Works in **IntelliJ IDEA Community and Ultimate** (and other JetBrains IDEs),
 because it rides on the open-source [LSP4IJ][lsp4ij] client rather than the
@@ -48,8 +48,10 @@ with `SAULE_PATH` / `-Dsaule.path=`):
   arguments* are forwarded to the script via `Os.args()`.
 
 The server has no semantic-token support, so highlighting is done client-side by
-a hand-written lexer that mirrors `crates/saule-lexer`. Everything semantic comes
-from the same `saule-lsp` binary the VS Code and Neovim integrations use.
+a hand-written lexer that mirrors `crates/saule-lexer` in the language
+repository. Everything semantic comes from the same `saule-lsp` binary the
+[VS Code](https://github.com/lauriszz123/saule-vscode) and
+[Neovim](https://github.com/lauriszz123/saule-nvim) plugins use.
 
 ## Indentation, tabs and spaces
 
@@ -115,12 +117,31 @@ saule fmt -w --tabs --indent 4 src/TestPanel.sau
 
 ## Prerequisites
 
-1. **The `saule-lsp` binary.** Build it from the workspace root:
+1. **The `saule-lsp` binary.** The installer puts it, and the `saule` CLI, in
+   `~/.saule/bin` and adds that to your `PATH`:
+
+   ```bash
+   curl -fsSL https://lauriszz123.github.io/saule/install.sh | sh
+   ```
+
+   ```powershell
+   irm https://lauriszz123.github.io/saule/install.ps1 | iex
+   ```
+
+   Or build it from a checkout of the
+   [language repository](https://github.com/lauriszz123/saule):
+
    ```bash
    cargo build --release -p saule-lsp
    ```
-   This produces `target/release/saule-lsp[.exe]`, which the plugin finds
-   automatically when you open the Saule project (see *Server discovery* below).
+
+   That produces `target/release/saule-lsp[.exe]`, which the plugin finds
+   automatically when you open that project (see *Toolchain discovery* below).
+
+   > On macOS, applications launched from the Dock or Finder do not read
+   > `~/.zshrc`, so the IDE will not see `~/.saule/bin` on `PATH`. Set the
+   > toolchain directory explicitly under **Settings ▸ Languages & Frameworks
+   > ▸ Saule**.
 
 2. **JDK 17+** to build the plugin. **A JetBrains IDE 2024.2+** to run it.
 
@@ -129,9 +150,11 @@ saule fmt -w --tabs --indent 4 src/TestPanel.sau
 
 ## Build & install
 
-From this directory:
+From the repository root:
 
 ```bash
+git clone https://github.com/lauriszz123/saule-intellij.git
+cd saule-intellij
 ./gradlew buildPlugin
 ```
 
@@ -145,18 +168,25 @@ To hack on the plugin in a sandbox IDE with it preloaded:
 ./gradlew runIde
 ```
 
+The indent model tests need no IDE fixture:
+
+```bash
+./gradlew test
+```
+
 ## Toolchain discovery
 
 Both binaries (`saule`, `saule-lsp`) are located the same way — first hit wins:
 
 1. `SAULE_PATH` / `SAULE_LSP_PATH` env var (or `-Dsaule.path=` / `-Dsaule.lsp.path=`).
 2. **Settings ▸ Languages & Frameworks ▸ Saule** — a *toolchain directory* (the
-   folder holding the binaries) or explicit per-binary paths. **Set this for
-   projects outside the Saule Cargo workspace** (e.g. `C:\Users\you\IdeaProjects\…`),
-   where there is no `target/` build output to discover.
+   folder holding the binaries) or explicit per-binary paths. **Set this when
+   the IDE cannot see your `PATH`** (see the macOS note above), or for projects
+   outside a Saule Cargo workspace where there is no `target/` build output to
+   discover.
 3. `target/{release,debug}/saule[-lsp][.exe]`, found by walking up from the
    project base and every content root.
-4. On your `PATH`.
+4. On your `PATH` — where the installer puts them.
 
 If nothing resolves, the run configuration reports a clear error pointing you to
 the settings page (instead of a raw `CreateProcess error=2`).
@@ -165,13 +195,25 @@ You can inspect and control the running server from **Settings ▸ Languages &
 Frameworks ▸ Language Servers** (the LSP4IJ panel), including a **LSP console**
 for tracing JSON-RPC traffic.
 
+## Editor parity
+
+`SauleIndentModel` is the original that the VS Code extension's `src/indent.ts`
+and the Neovim plugin's `lua/saule/indent.lua` are ports of, and the three
+share a test corpus — `SauleIndentModelTest` here, `src/indent.test.ts` and
+`tests/indent_spec.lua` there. All three are in turn derived from the printer
+in `crates/saule-fmt/src/lib.rs`. The three clients live in separate
+repositories now, so changing one is a change to all three: update
+[saule-vscode](https://github.com/lauriszz123/saule-vscode) and
+[saule-nvim](https://github.com/lauriszz123/saule-nvim) alongside it and re-run
+every suite.
+
 ## Configuration knobs
 
 | Property | Where | Default |
 |---|---|---|
 | IDE built against | `gradle.properties` → `platformType`/`platformVersion` | `IC` / `2024.2` |
 | Compatibility floor | `gradle.properties` → `pluginSinceBuild` | `242` |
-| LSP4IJ version | `gradle.properties` → `lsp4ijVersion` | `0.7.0` |
+| LSP4IJ version | `gradle.properties` → `lsp4ijVersion` | `0.20.1` |
 
 To target an older IDE (LSP4IJ supports 2023.2+), lower **both**
 `platformVersion` (e.g. `2023.2`) and `pluginSinceBuild` (e.g. `232`) together.
@@ -183,7 +225,7 @@ To target an older IDE (LSP4IJ supports 2023.2+), lower **both**
 ## Layout
 
 ```
-editors/intellij/
+saule-intellij/
 ├─ build.gradle.kts                 IntelliJ Platform Gradle Plugin 2.x
 ├─ gradle.properties                versions & compatibility range
 ├─ src/main/
@@ -201,5 +243,9 @@ editors/intellij/
 │     └─ icons/saule.svg
 └─ src/test/kotlin/     SauleIndentModelTest (`./gradlew test`)
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 [lsp4ij]: https://plugins.jetbrains.com/plugin/23257-lsp4ij

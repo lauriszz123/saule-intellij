@@ -1,14 +1,25 @@
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="1" width="14" height="14" rx="3" fill="#F4B400"/>
-  <circle cx="8" cy="8" r="3.1" fill="#FFFFFF"/>
-  <g stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round">
-    <line x1="8" y1="1.6" x2="8" y2="3.2"/>
-    <line x1="8" y1="12.8" x2="8" y2="14.4"/>
-    <line x1="1.6" y1="8" x2="3.2" y2="8"/>
-    <line x1="12.8" y1="8" x2="14.4" y2="8"/>
-    <line x1="3.5" y1="3.5" x2="4.6" y2="4.6"/>
-    <line x1="11.4" y1="11.4" x2="12.5" y2="12.5"/>
-    <line x1="12.5" y1="3.5" x2="11.4" y2="4.6"/>
-    <line x1="4.6" y1="11.4" x2="3.5" y2="12.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" role="img" aria-label="Saule">
+  <title>Saule</title>
+  <!--
+    The 16px form, for an editor's file-type gutter. Everything that cannot
+    survive at this size is gone: the orbit reads as a stray scratch and the
+    gradients band, so the ring is dropped, the fills are flat, and the sea is
+    two bands. The crescent is deliberately fatter than scale would suggest —
+    at true proportion its lit edge is under a pixel and disappears.
+  -->
+  <defs>
+    <mask id="crescent16">
+      <circle cx="12.1" cy="3.6" r="3.4" fill="#fff"/>
+      <circle cx="13.9" cy="1.9" r="3.0" fill="#000"/>
+    </mask>
+  </defs>
+
+  <path d="M1.6 10.4a6.4 6.4 0 0 1 12.8 0Z" fill="#F7A224"/>
+  <ellipse cx="8" cy="11.1" rx="7.1" ry="0.85" fill="#F7A224"/>
+  <ellipse cx="8" cy="13.2" rx="4.2" ry="0.8" fill="#F7A224" opacity="0.72"/>
+  <ellipse cx="8" cy="15" rx="2" ry="0.6" fill="#F7A224" opacity="0.5"/>
+
+  <g mask="url(#crescent16)">
+    <circle cx="12.1" cy="3.6" r="3.4" fill="#FFE3A0"/>
   </g>
 </svg>

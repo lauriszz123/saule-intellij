@@ -268,11 +268,26 @@ class SauleIndentModelTest {
     }
 
     @Test
+    fun `agrees with saule fmt on the shared conformance program`() {
+        val text = javaClass.getResource("/indent-conformance.sau")!!.readText().replace("\r\n", "\n")
+        var start = 0
+        text.split("\n").forEachIndexed { i, line ->
+            val end = start + line.length
+            if (line.isNotBlank()) {
+                val got = SauleIndentModel.indentForLine(text, start, end)
+                val written = (line.length - line.trimStart().length) / 2
+                assertEquals("line ${i + 1}: $line", written, got.blocks + got.continuations)
+            }
+            start = end + 1
+        }
+    }
+
+    @Test
     fun `an anonymous fn argument is still a block`() {
         // The counter-case the type-position rule must not break: `fn` after
         // a comma opens a real body.
         assertEquals(
-            SauleIndent(1, 1),
+            SauleIndent(1, 0),
             indentOfLine("map(xs, fn(x: integer) -> integer\n\n", 1),
         )
     }

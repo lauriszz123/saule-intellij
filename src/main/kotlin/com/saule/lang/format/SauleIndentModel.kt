@@ -20,7 +20,7 @@ data class SauleIndent(val blocks: Int, val continuations: Int) {
     fun render(options: CommonCodeStyleSettings.IndentOptions): String {
         val indentSize = options.INDENT_SIZE.takeIf { it > 0 } ?: SauleIndentDefaults.INDENT
         val continuationSize =
-            options.CONTINUATION_INDENT_SIZE.takeIf { it > 0 } ?: (indentSize * 2)
+            options.CONTINUATION_INDENT_SIZE.takeIf { it > 0 } ?: indentSize
 
         if (!options.USE_TAB_CHARACTER) {
             return " ".repeat(blocks * indentSize + continuations * continuationSize)
@@ -69,8 +69,47 @@ object SauleIndentModel {
      * [LOOP_HEADER] is a `for` / `while` block whose header has not reached its
      * `do` yet. It is a block like any other — it just remembers that the next
      * `do` belongs to the header and so must not open a second one.
+     *
+     * The rest are what keep this in step with `saule fmt`:
+     *
+     * [FN_HEADER] is a `fn` whose parameter list has not closed. Its body has
+     * not started, so it is no level yet.
+     *
+     * [INLINE_CASE] is `case … then value`. An arm on one line steps nothing in.
+     *
+     * [BRACKET] is open with nothing decided. [SETTLED_BRACKET] was followed by
+     * a line break, so its contents are one level in. [HUGGED_BRACKET] holds a
+     * block on the line it opened on (`f(fn()`) and stays no level at all.
      */
-    private enum class Frame { BLOCK, LOOP_HEADER, INTERFACE, CASE, BRACKET }
+    private enum class Frame {
+        BLOCK,
+        LOOP_HEADER,
+        INTERFACE,
+        CASE,
+        BRACKET,
+        FN_HEADER,
+        INLINE_CASE,
+        SETTLED_BRACKET,
+        HUGGED_BRACKET,
+    }
+
+    private fun isBracket(frame: Frame?): Boolean =
+        frame == Frame.BRACKET || frame == Frame.SETTLED_BRACKET || frame == Frame.HUGGED_BRACKET
+
+    /** Turn the undecided brackets on top of the stack into [to]. */
+    private fun decideBrackets(stack: ArrayList<Frame>, to: Frame) {
+        var i = stack.lastIndex
+        while (i >= 0 && stack[i] == Frame.BRACKET) {
+            stack[i] = to
+            i--
+        }
+    }
+
+    /** Push a frame that opens a block, which hugs any bracket still undecided. */
+    private fun pushBlock(stack: ArrayList<Frame>, frame: Frame) {
+        decideBrackets(stack, Frame.HUGGED_BRACKET)
+        stack.add(frame)
+    }
 
     /** Keywords that open a block closed by `end` (or, for `repeat`, `until`). */
     private val BLOCK_OPENERS = setOf("class", "enum", "if", "repeat", "try", "match")
@@ -139,24 +178,32 @@ object SauleIndentModel {
 
         var firstOnLine: String? = null
         var previous: String? = null
+        var beforePrevious: String? = null
+        var previousStart = 0
         while (true) {
             val type: IElementType = lexer.tokenType ?: break
             val start = lexer.tokenStart
             if (start >= lineEnd) break
             if (isSignificant(type)) {
                 val word = text.subSequence(start, lexer.tokenEnd).toString()
+                val newLine = (previousStart until start).any { text[it] == '\n' }
+                if (newLine) decideBrackets(stack, Frame.SETTLED_BRACKET)
                 if (start >= lineStart) {
                     firstOnLine = word
                     break
                 }
-                apply(word, previous, stack)
+                apply(word, previous, beforePrevious, stack, newLine)
+                beforePrevious = previous
                 previous = word
+                previousStart = start
             }
             lexer.advance()
         }
 
-        val blocks = stack.count { it != Frame.BRACKET }
-        val brackets = stack.size - blocks
+        val brackets = stack.count { it == Frame.BRACKET || it == Frame.SETTLED_BRACKET }
+        val blocks = stack.count {
+            it == Frame.BLOCK || it == Frame.LOOP_HEADER || it == Frame.INTERFACE || it == Frame.CASE
+        }
         val top = stack.lastOrNull()
 
         var blockDedent = 0
@@ -168,7 +215,8 @@ object SauleIndentModel {
             // A `case` only steps out when a previous arm is still open;
             // the first arm of a `match` already sits at the body level.
             firstOnLine == "case" -> if (top == Frame.CASE) blockDedent = 1
-            firstOnLine in CLOSE_BRACKETS -> if (top == Frame.BRACKET) bracketDedent = 1
+            firstOnLine in CLOSE_BRACKETS ->
+                if (top == Frame.BRACKET || top == Frame.SETTLED_BRACKET) bracketDedent = 1
         }
 
         return SauleIndent(
@@ -181,18 +229,37 @@ object SauleIndentModel {
     private fun isSignificant(type: IElementType): Boolean =
         type != TokenType.WHITE_SPACE && type != T.LINE_COMMENT && type != T.BLOCK_COMMENT
 
-    private fun apply(word: String, previous: String?, stack: ArrayList<Frame>) {
+    private fun apply(
+        word: String,
+        previous: String?,
+        beforePrevious: String?,
+        stack: ArrayList<Frame>,
+        newLine: Boolean,
+    ) {
+        if (previous == "then" && !newLine && stack.lastOrNull() == Frame.CASE) {
+            stack[stack.lastIndex] = Frame.INLINE_CASE
+        }
         when {
             word == "interface" -> stack.add(Frame.INTERFACE)
             // Also covers lambdas — `fn(x) … end` is a block like any other.
             // A `fn` in type position (`f: fn(T) -> U`) opens nothing: it is
             // a type, it has no body, and no `end` will ever come for it.
-            word == "fn" ->
-                if (stack.lastOrNull() != Frame.INTERFACE && previous !in TYPE_POSITION) {
-                    stack.add(Frame.BLOCK)
+            word == "fn" -> {
+                // `name: fn(x) … end` in a call or a table is a value, not an
+                // annotation. Only a parameter list says `name: fn(T) -> U`.
+                val below = stack.getOrNull(stack.lastIndex - 1)
+                val namedValue = previous == ":" && isBracket(stack.lastOrNull()) &&
+                    below != Frame.FN_HEADER && below != Frame.INTERFACE
+                // `(fn() -> T)?` after a `:` is a type in brackets.
+                val bracketedType = previous == "(" && beforePrevious in TYPE_POSITION
+                if (stack.lastOrNull() != Frame.INTERFACE && !bracketedType &&
+                    (namedValue || previous !in TYPE_POSITION)
+                ) {
+                    pushBlock(stack, Frame.FN_HEADER)
                 }
-            word in BLOCK_OPENERS -> stack.add(Frame.BLOCK)
-            word in LOOP_OPENERS -> stack.add(Frame.LOOP_HEADER)
+            }
+            word in BLOCK_OPENERS -> pushBlock(stack, Frame.BLOCK)
+            word in LOOP_OPENERS -> pushBlock(stack, Frame.LOOP_HEADER)
             // Closing a loop header costs nothing — `for`/`while` opened the
             // block already — but a `do` anywhere else is a trailing block,
             // and that one is its own level.
@@ -200,15 +267,20 @@ object SauleIndentModel {
                 if (stack.lastOrNull() == Frame.LOOP_HEADER) {
                     stack[stack.lastIndex] = Frame.BLOCK
                 } else {
-                    stack.add(Frame.BLOCK)
+                    pushBlock(stack, Frame.BLOCK)
                 }
             word in CLOSERS -> closeBlock(stack)
             word == "case" -> {
-                if (stack.lastOrNull() == Frame.CASE) stack.removeLast()
+                if (stack.lastOrNull() == Frame.CASE || stack.lastOrNull() == Frame.INLINE_CASE) {
+                    stack.removeAt(stack.lastIndex)
+                }
                 stack.add(Frame.CASE)
             }
             word in OPEN_BRACKETS -> stack.add(Frame.BRACKET)
-            word in CLOSE_BRACKETS -> if (stack.lastOrNull() == Frame.BRACKET) stack.removeLast()
+            word in CLOSE_BRACKETS -> if (isBracket(stack.lastOrNull())) {
+                stack.removeAt(stack.lastIndex)
+                if (stack.lastOrNull() == Frame.FN_HEADER) stack[stack.lastIndex] = Frame.BLOCK
+            }
         }
     }
 
@@ -220,6 +292,7 @@ object SauleIndentModel {
     private fun closeBlock(stack: ArrayList<Frame>) {
         while (stack.isNotEmpty() &&
             stack.last() != Frame.BLOCK &&
+            stack.last() != Frame.FN_HEADER &&
             stack.last() != Frame.LOOP_HEADER &&
             stack.last() != Frame.INTERFACE
         ) {
@@ -234,7 +307,8 @@ object SauleIndentModel {
         for (i in stack.indices.reversed()) {
             when (stack[i]) {
                 Frame.CASE -> n++
-                Frame.BRACKET -> Unit // half-typed code; not a level of its own here
+                // Half-typed code or a one-line arm; not a level of its own here.
+                Frame.BRACKET, Frame.SETTLED_BRACKET, Frame.HUGGED_BRACKET, Frame.INLINE_CASE -> Unit
                 else -> return n
             }
         }

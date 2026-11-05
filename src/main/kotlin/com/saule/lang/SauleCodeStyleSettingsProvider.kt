@@ -99,8 +99,8 @@ class SauleCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() {
         // also change how wide a level is; see the class docs.
         indentOptions.TAB_SIZE = SauleIndentDefaults.INDENT
         indentOptions.USE_TAB_CHARACTER = false
-        // Tabs-to-indent, spaces-to-align, for when the user does switch tabs on.
-        indentOptions.SMART_TABS = true
+        // `saule fmt` writes a continuation as one more tab, not as alignment.
+        indentOptions.SMART_TABS = false
         commonSettings.RIGHT_MARGIN = RIGHT_MARGIN
     }
 
@@ -145,5 +145,5 @@ class SauleCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() {
 /** Saule's canonical layout, shared with the indent model's fallbacks. */
 object SauleIndentDefaults {
     const val INDENT = 2
-    const val CONTINUATION_INDENT = 4
+    const val CONTINUATION_INDENT = 2
 }

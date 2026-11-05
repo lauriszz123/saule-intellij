@@ -1,0 +1,155 @@
+-- Every line here is exactly where `saule fmt` puts it. The Neovim, VS Code and
+-- IntelliJ indent models must each agree with it, line by line. Keep the three
+-- copies of this file identical.
+import * from "uikit"
+
+interface Named
+  fn name() -> string
+  fn visit(f: fn(string) -> nil)
+end
+
+enum Shape
+  Circle(radius: float),
+  Square
+end
+
+export class Row<T> extends Base implements Named
+  local title: string
+  local onOpen: (fn() -> nil)?
+  local tags: string[]
+  callback: fn(T) -> nil
+
+  fn init(
+    title: string = "end",
+    tags: table<string> = {},
+    onOpen: (fn() -> nil)? = nil,
+    key: string? = nil
+  )
+    self.super(key)
+    self.title = title
+  end
+
+  fn name() -> string
+    return self.title
+  end
+
+  static fn make(cb: fn(T) -> T, other: fn() -> nil) -> Row<T>
+    return Row()
+  end
+
+  fn visit(f: fn(string) -> nil)
+    f("if then do fn class")
+  end
+end
+
+fn hugged()
+  out.setBackward(fn()
+    -- keeps its place: end if fn
+    lhs.accumulate(out.gradient())
+  end)
+  foo(1, "two", fn(x: integer) -> integer
+    return x
+  end)
+  outer(inner(fn()
+    return 1
+  end))
+  println(match value
+    case Shape.Square then "square"
+    case other then "other"
+  end)
+end
+
+fn named()
+  TextField(placeholder: "Your name", onChanged: fn(text: string)
+    println(text)
+  end) do (text: string)
+    println("submitted")
+  end
+  local widget = TextField(
+    value: self.draft,
+    placeholder: "Add a tag, then press Enter, and keep typing until this is long",
+    onChanged: fn(text: string)
+      self.draft = text
+    end
+  ) do (text: string)
+    self.add()
+  end
+  return KeyboardListener(onKeyDown: fn(event: KeyEvent)
+    return self.shortcut(event)
+  end, child: panel.padding(20.0).background(
+    Colors.surfaceLight,
+    radius: 10.0,
+    border: Colors.border
+  ).padding(24.0))
+end
+
+fn arms(value: Shape) -> string
+  local first = match value
+    case Shape.Square then Shape.Circle(1.0)
+    case Shape.Circle(r) then
+      println(r)
+      return "circle"
+    case other when other == nil then "nil"
+  end
+  match first
+    case Shape.Square then println("a")
+
+    case _ then println("b")
+  end
+  return "x"
+end
+
+fn flow(items: table<string, integer>)
+  for key, item in items do
+    if item > 1 then
+      continue
+    elseif item < 0 then
+      break
+    else
+      println(key)
+    end
+  end
+  for i = 1, 3 do
+    while i > 0 do
+      i = i - 1
+    end
+  end
+  repeat
+    tick()
+  until done()
+  try
+    risky()
+  catch err: string
+    println(err)
+  finally
+    close()
+  end
+  Canvas() do
+    draw()
+  end
+  local big: table<string, integer> = {
+    alpha: 1,
+    beta: 2,
+    gamma: 3,
+    delta: 4,
+    epsilon: 5,
+    zeta: 6,
+    eta: 7,
+    theta: 8,
+    iota: 9,
+    kappa: 10,
+    lambda: 11,
+  }
+  local handlers: table<string, any> = {
+    "one long entry to force the table on to many lines, one entry on each line",
+    fn()
+      return 1
+    end,
+  }
+  local cast = items as table<string, integer>
+  local arrow = (x: integer) -> integer => x + 1
+end
+
+local fn helper(xs: string[]) -> string[]
+  return xs
+end

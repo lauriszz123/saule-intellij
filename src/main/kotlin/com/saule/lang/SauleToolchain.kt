@@ -13,11 +13,11 @@ import java.nio.file.Paths
  * Locates the Saule toolchain binaries (`saule`, `saule-lsp`) and the workspace
  * root to run them from.
  *
- * The binaries are the Cargo build output of the Saule repo, so resolution
- * walks UP from the project base path and every content root looking for
- * `target/{release,debug}/<name>[.exe]`. That way opening a sub-folder (e.g.
- * `examples/json_usage`) still finds the workspace-root build output, and the
- * server / CLI is launched with its working directory set to that root.
+ * Normally that is the installed toolchain, on `PATH` or in `~/.saule/bin`. A
+ * project's own Cargo build output is only considered when the user has allowed
+ * it in Settings, because a project's files are not trusted just because it was
+ * opened: nothing stops a repository committing `target/debug/saule-lsp`, and
+ * starting it automatically would hand that repository the user's machine.
  */
 object SauleToolchain {
     private val LOG = logger<SauleToolchain>()
@@ -63,23 +63,51 @@ object SauleToolchain {
             }
         }
 
-        // 3. Cargo build output, walking up from the project / content roots.
-        for (root in candidateRoots(project)) {
-            findUpward(root, exe)?.let { (path, workspace) ->
-                LOG.info("Using $base from build output: $path (cwd=$workspace)")
-                return Located(path.toString(), workspace.toString(), found = true)
+        // 3–5. The project's build if allowed, then PATH, then the install directory.
+        discover(
+            exe,
+            candidateRoots(project),
+            settings.useProjectBuild,
+            System.getenv("PATH"),
+            installDir(),
+        )?.let { (path, workingDir) ->
+            LOG.info("Using $base from $path")
+            return Located(path.toString(), workingDir?.toString() ?: project.basePath, found = true)
+        }
+
+        // 6. Nothing found — bare name, so callers can surface a helpful error.
+        LOG.warn("$base not found via settings, PATH, or the install directory")
+        return Located(exe, project.basePath, found = false)
+    }
+
+    /**
+     * The search once explicit choices are out of the way, from plain inputs so
+     * the rule can be tested without an IDE. The second value is the working
+     * directory, when the location implies one.
+     */
+    internal fun discover(
+        exe: String,
+        roots: List<Path>,
+        allowProjectBuild: Boolean,
+        pathEnv: String?,
+        installDir: Path?,
+    ): Pair<Path, Path?>? {
+        if (allowProjectBuild) {
+            for (root in roots) {
+                findUpward(root, exe)?.let { (path, workspace) -> return path to workspace }
             }
         }
+        findOnPath(exe, pathEnv)?.let { return it to null }
+        installDir?.resolve(exe)?.takeIf { Files.isRegularFile(it) }?.let { return it to null }
+        return null
+    }
 
-        // 4. PATH.
-        findOnPath(exe)?.let {
-            LOG.info("Using $base from PATH: $it")
-            return Located(it.toString(), project.basePath, found = true)
-        }
-
-        // 5. Nothing found — bare name, so callers can surface a helpful error.
-        LOG.warn("$base not found via settings, target/ dirs, or PATH")
-        return Located(exe, project.basePath, found = false)
+    /** `$SAULE_HOME/bin`, else `~/.saule/bin`. */
+    private fun installDir(): Path? {
+        val home = System.getenv("SAULE_HOME")?.trim()?.ifEmpty { null }
+            ?: System.getProperty("user.home")?.let { Paths.get(it, ".saule").toString() }
+            ?: return null
+        return runCatching { Paths.get(home, "bin") }.getOrNull()
     }
 
     /** Walk up from [start], returning the `target/{release,debug}/exe` and the
@@ -116,12 +144,14 @@ object SauleToolchain {
         return raw.trim().ifEmpty { null }
     }
 
-    private fun findOnPath(exe: String): Path? {
-        val pathEnv = System.getenv("PATH") ?: return null
-        return pathEnv.split(File.pathSeparatorChar)
+    /** A relative entry such as `.` is skipped: it would resolve against the open project. */
+    private fun findOnPath(exe: String, pathEnv: String?): Path? {
+        return (pathEnv ?: return null).split(File.pathSeparatorChar)
             .asSequence()
             .filter { it.isNotBlank() }
-            .map { Paths.get(it, exe) }
+            .mapNotNull { runCatching { Paths.get(it) }.getOrNull() }
+            .filter { it.isAbsolute }
+            .map { it.resolve(exe) }
             .firstOrNull { Files.isRegularFile(it) }
     }
 }

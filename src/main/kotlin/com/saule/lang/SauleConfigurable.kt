@@ -14,6 +14,7 @@ class SauleConfigurable : Configurable {
     private val toolchainDir = TextFieldWithBrowseButton()
     private val saulePath = TextFieldWithBrowseButton()
     private val sauleLspPath = TextFieldWithBrowseButton()
+    private val useProjectBuild = JBCheckBox("Run the binaries from a project's own target/ folder")
     private val formatOnSave = JBCheckBox("Reformat .sau files on save")
 
     override fun getDisplayName(): String = "Saule"
@@ -37,15 +38,23 @@ class SauleConfigurable : Configurable {
         return FormBuilder.createFormBuilder()
             .addComponent(
                 JBLabel(
-                    "<html>Point the plugin at your Saule toolchain. Needed for projects " +
-                        "outside the Saule Cargo workspace, where the binaries can't be " +
-                        "auto-discovered under <code>target/</code>.</html>",
+                    "<html>Where your Saule toolchain is. Leave these empty to use " +
+                        "<code>PATH</code> and <code>~/.saule/bin</code>.</html>",
                 ),
             )
             .addLabeledComponent("Toolchain directory:", toolchainDir)
             .addSeparator()
             .addLabeledComponent("'saule' path (optional):", saulePath)
             .addLabeledComponent("'saule-lsp' path (optional):", sauleLspPath)
+            .addSeparator()
+            .addComponent(useProjectBuild)
+            .addComponent(
+                JBLabel(
+                    "<html><small>For working on Saule itself. With this on, opening a project " +
+                        "runs any <code>target/debug/saule-lsp</code> it contains, so only use " +
+                        "it if you trust every project you open.</small></html>",
+                ),
+            )
             .addSeparator()
             .addComponent(formatOnSave)
             .addComponent(
@@ -64,6 +73,7 @@ class SauleConfigurable : Configurable {
         return toolchainDir.text.trim() != s.toolchainDir ||
             saulePath.text.trim() != s.saulePath ||
             sauleLspPath.text.trim() != s.sauleLspPath ||
+            useProjectBuild.isSelected != s.useProjectBuild ||
             formatOnSave.isSelected != s.formatOnSave
     }
 
@@ -72,6 +82,7 @@ class SauleConfigurable : Configurable {
         s.toolchainDir = toolchainDir.text.trim()
         s.saulePath = saulePath.text.trim()
         s.sauleLspPath = sauleLspPath.text.trim()
+        s.useProjectBuild = useProjectBuild.isSelected
         s.formatOnSave = formatOnSave.isSelected
     }
 
@@ -80,6 +91,7 @@ class SauleConfigurable : Configurable {
         toolchainDir.text = s.toolchainDir
         saulePath.text = s.saulePath
         sauleLspPath.text = s.sauleLspPath
+        useProjectBuild.isSelected = s.useProjectBuild
         formatOnSave.isSelected = s.formatOnSave
     }
 }

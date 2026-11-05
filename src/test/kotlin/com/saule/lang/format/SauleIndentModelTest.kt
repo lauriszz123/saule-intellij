@@ -182,6 +182,34 @@ class SauleIndentModelTest {
     )
 
     @Test
+    fun `try catch finally`() = assertRoundTrips(
+        """
+        fn f()
+          try
+            risky()
+          catch e: any
+            log(e)
+          finally
+            close()
+          end
+        end
+        """
+    )
+
+    @Test
+    fun `try finally`() = assertRoundTrips(
+        """
+        fn f()
+          try
+            risky()
+          finally
+            close()
+          end
+        end
+        """
+    )
+
+    @Test
     fun `lambda block body`() = assertRoundTrips(
         """
         local handler = fn(x: integer)

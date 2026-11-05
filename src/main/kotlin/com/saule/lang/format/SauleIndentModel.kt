@@ -88,7 +88,7 @@ object SauleIndentModel {
     private val LOOP_OPENERS = setOf("while", "for")
 
     /** Keywords that continue the enclosing block: written one level out. */
-    private val CONTINUATIONS = setOf("else", "elseif", "catch")
+    private val CONTINUATIONS = setOf("else", "elseif", "catch", "finally")
 
     /** Keywords that close the enclosing block: also written one level out. */
     private val CLOSERS = setOf("end", "until")

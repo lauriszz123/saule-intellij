@@ -55,7 +55,7 @@ object SauleTokenTypes {
      *  `crates/saule-lexer/src/lib.rs::ident_or_keyword`. */
     val CONTROL_KEYWORDS = setOf(
         "if", "else", "elseif", "then", "end", "for", "while", "repeat", "until",
-        "do", "in", "break", "continue", "return", "throw", "try", "catch",
+        "do", "in", "break", "continue", "return", "throw", "try", "catch", "finally",
         "match", "case", "when",
     )
     val DECL_KEYWORDS = setOf(
@@ -69,6 +69,6 @@ object SauleTokenTypes {
     // and `fn` is already highlighted as a declaration keyword.
     val PRIMITIVE_TYPES = setOf(
         "integer", "float", "string", "boolean", "any",
-        "table", "userdata", "thread",
+        "table", "byte", "bytes",
     )
 }

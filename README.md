@@ -137,13 +137,10 @@ saule fmt -w --tabs --indent 4 src/TestPanel.sau
    cargo build --release -p saule-lsp
    ```
 
-   That produces `target/release/saule-lsp[.exe]`, which the plugin finds
-   automatically when you open that project (see *Toolchain discovery* below).
-
-   > On macOS, applications launched from the Dock or Finder do not read
-   > `~/.zshrc`, so the IDE will not see `~/.saule/bin` on `PATH`. Set the
-   > toolchain directory explicitly under **Settings ▸ Languages & Frameworks
-   > ▸ Saule**.
+   That produces `target/release/saule-lsp[.exe]`. To use it, turn on *Run the
+   binaries from a project's own target/ folder* in **Settings ▸ Languages &
+   Frameworks ▸ Saule**, or point the toolchain directory at it (see *Toolchain
+   discovery* below).
 
 2. **JDK 17+** to build the plugin. **A JetBrains IDE 2024.2+** to run it.
 
@@ -198,13 +195,17 @@ Both binaries (`saule`, `saule-lsp`) are located the same way — first hit wins
 
 1. `SAULE_PATH` / `SAULE_LSP_PATH` env var (or `-Dsaule.path=` / `-Dsaule.lsp.path=`).
 2. **Settings ▸ Languages & Frameworks ▸ Saule** — a *toolchain directory* (the
-   folder holding the binaries) or explicit per-binary paths. **Set this when
-   the IDE cannot see your `PATH`** (see the macOS note above), or for projects
-   outside a Saule Cargo workspace where there is no `target/` build output to
-   discover.
-3. `target/{release,debug}/saule[-lsp][.exe]`, found by walking up from the
+   folder holding the binaries) or explicit per-binary paths.
+3. Only with *Run the binaries from a project's own target/ folder* turned on:
+   `target/{release,debug}/saule[-lsp][.exe]`, found by walking up from the
    project base and every content root.
-4. On your `PATH` — where the installer puts them.
+4. On your `PATH`.
+5. `~/.saule/bin` (or `$SAULE_HOME/bin`), where the installer puts them. This
+   also covers an IDE launched from the Dock, which never reads your `~/.zshrc`.
+
+Step 3 is off by default because a repository can commit a `target/debug/saule-lsp`
+of its own, and opening a project should not run it. Turn it on if you work on
+the language itself.
 
 If nothing resolves, the run configuration reports a clear error pointing you to
 the settings page (instead of a raw `CreateProcess error=2`).

@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.saule.lang</id>
     <name>Saule</name>
-    <version>26.1</version>
+    <version>26.20</version>
     <vendor url="https://github.com/lauriszz123/saule">Saule</vendor>
 
     <description><![CDATA[
@@ -12,6 +12,16 @@
         <p>Semantic features are provided by the <code>saule-lsp</code> binary
         from the Saule toolchain, connected through LSP4IJ.</p>
     ]]></description>
+
+    <change-notes><![CDATA[
+        <ul>
+          <li>A project's own <code>target/</code> build is no longer run just because the
+          project was opened. Running it is now an opt-in setting.</li>
+          <li><code>~/.saule/bin</code> is found without any setup.</li>
+          <li>Highlighting and indentation for <code>finally</code>, and highlighting for
+          <code>byte</code> and <code>bytes</code>.</li>
+        </ul>
+    ]]></change-notes>
 
     <!-- Core platform. -->
     <depends>com.intellij.modules.platform</depends>

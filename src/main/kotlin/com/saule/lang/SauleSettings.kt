@@ -7,9 +7,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
 /**
- * Application-wide location of the Saule toolchain, so the plugin works for
- * projects that live outside the Saule Cargo workspace (where there is no
- * `target/…` build output to auto-discover).
+ * Application-wide location of the Saule toolchain, for when it is not on `PATH`
+ * or in `~/.saule/bin`.
  *
  * Set it in **Settings ▸ Languages & Frameworks ▸ Saule**.
  */
@@ -24,6 +23,8 @@ class SauleSettings : PersistentStateComponent<SauleSettings.State> {
         @JvmField var saulePath: String = ""
         /** Explicit path to `saule-lsp` (wins over [toolchainDir]). */
         @JvmField var sauleLspPath: String = ""
+        /** Run a project's own `target/` build. See [SauleToolchain]. */
+        @JvmField var useProjectBuild: Boolean = false
         /** Reformat `.sau` files with `saule fmt` when they are saved. */
         @JvmField var formatOnSave: Boolean = true
     }
@@ -44,6 +45,10 @@ class SauleSettings : PersistentStateComponent<SauleSettings.State> {
     var sauleLspPath: String
         get() = myState.sauleLspPath
         set(value) { myState.sauleLspPath = value }
+
+    var useProjectBuild: Boolean
+        get() = myState.useProjectBuild
+        set(value) { myState.useProjectBuild = value }
 
     /** See [com.saule.lang.format.SauleFormatOnSave]. On by default. */
     var formatOnSave: Boolean

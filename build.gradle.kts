@@ -57,6 +57,17 @@ intellijPlatform {
         }
     }
 
+    // Both read from the environment, so nothing here is a secret. See
+    // .github/workflows/ci.yml.
+    publishing {
+        token = providers.environmentVariable("JETBRAINS_TOKEN")
+    }
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
     // `verifyPlugin` runs the JetBrains Plugin Verifier. Point it at the same
     // platform we compile against so it reuses the already-downloaded IDE
     // instead of fetching the whole `recommended()` matrix.

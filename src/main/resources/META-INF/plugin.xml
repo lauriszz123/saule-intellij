@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.saule.lang</id>
     <name>Saule</name>
-    <version>26.20</version>
+    <version>26.21</version>
     <vendor url="https://github.com/lauriszz123/saule">Saule</vendor>
 
     <description><![CDATA[
@@ -15,11 +15,11 @@
 
     <change-notes><![CDATA[
         <ul>
-          <li>A project's own <code>target/</code> build is no longer run just because the
-          project was opened. Running it is now an opt-in setting.</li>
-          <li><code>~/.saule/bin</code> is found without any setup.</li>
-          <li>Highlighting and indentation for <code>finally</code>, and highlighting for
-          <code>byte</code> and <code>bytes</code>.</li>
+          <li>Pressing Enter now indents where <code>saule fmt</code> will put the line,
+          including inside lambda arguments, multi-line parameter lists and one-line
+          <code>case</code> arms.</li>
+          <li>Continuation lines default to one indent level, matching <code>saule fmt</code>.
+          Saved Code Style settings still apply.</li>
         </ul>
     ]]></change-notes>
 

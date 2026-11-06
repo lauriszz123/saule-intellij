@@ -1,7 +1,7 @@
 -- Every line here is exactly where `saule fmt` puts it. The Neovim, VS Code and
 -- IntelliJ indent models must each agree with it, line by line. Keep the three
 -- copies of this file identical.
-import * from "uikit"
+from "uikit" import *
 
 interface Named
   fn name() -> string

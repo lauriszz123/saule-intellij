@@ -113,7 +113,7 @@ class SauleCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() {
         // Written at the canonical 2-space indent so the preview matches what
         // `saule fmt` / `saule-lsp` actually produce.
         val CODE_SAMPLE = """
-            import * from entities.player
+            from entities.player import *
 
             export class Warrior extends Entity
               local health: integer

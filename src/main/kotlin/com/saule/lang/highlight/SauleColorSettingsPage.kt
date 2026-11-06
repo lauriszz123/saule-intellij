@@ -23,7 +23,7 @@ class SauleColorSettingsPage : ColorSettingsPage {
         -- Saule syntax highlighting preview
         --[[ block comment
              spanning lines ]]
-        import Player from "entities/player.sau"
+        from "entities/player" import Player
 
         export class Warrior extends Entity implements Damageable
             local health: integer = 100

@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.saule.lang</id>
     <name>Saule</name>
-    <version>26.21</version>
+    <version>26.23</version>
     <vendor url="https://github.com/lauriszz123/saule">Saule</vendor>
 
     <description><![CDATA[
@@ -15,7 +15,11 @@
 
     <change-notes><![CDATA[
         <ul>
-          <li>Pressing Enter now indents where <code>saule fmt</code> will put the line,
+          <li>Built for Saule 26.23, where imports name the module first
+          (<code>from shine import Window</code>), <code>import shine</code> brings in a
+          namespace, and re-exports are written <code>export from</code>. Completion,
+          hover and go to definition all work through a namespace.</li>
+          <li>Pressing Enter indents where <code>saule fmt</code> will put the line,
           including inside lambda arguments, multi-line parameter lists and one-line
           <code>case</code> arms.</li>
           <li>Continuation lines default to one indent level, matching <code>saule fmt</code>.

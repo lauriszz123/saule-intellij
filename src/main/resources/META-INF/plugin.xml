@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.saule.lang</id>
     <name>Saule</name>
-    <version>26.24</version>
+    <version>26.25</version>
     <vendor url="https://github.com/lauriszz123/saule">Saule</vendor>
 
     <description><![CDATA[
@@ -15,7 +15,7 @@
 
     <change-notes><![CDATA[
         <ul>
-          <li>Built for Saule 26.24. Imports name the module first
+          <li>Built for Saule 26.25. Imports name the module first
           (<code>from shine import Window</code>); <code>import shine</code> brings in
           everything <code>shine</code> exports and also keeps <code>shine.Window</code>
           working; re-exports are written <code>export from</code>.</li>
@@ -26,6 +26,9 @@
           continuation lines default to one indent level. Saved Code Style settings
           still apply.</li>
           <li>The Code Style and Color Scheme previews use the new import syntax.</li>
+          <li>Typing a <code>from …</code> line under an <code>import</code> no longer
+          flags the import above it, and completion works on the <code>from</code>
+          line.</li>
         </ul>
     ]]></change-notes>
 

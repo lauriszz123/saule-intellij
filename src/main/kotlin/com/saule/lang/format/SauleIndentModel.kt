@@ -156,13 +156,16 @@ object SauleIndentModel {
      * leftovers — a file with two such signatures put new lines two blocks
      * and two continuations deep.
      *
-     * Only these four contexts qualify, and each admits nothing but a type:
+     * Only these contexts qualify, and each admits nothing but a type:
      * `:` ascribes one, `->` introduces a return type, `<` opens a generic
-     * argument list, and `as` casts to one. Notably absent are `,` and `(` —
+     * argument list, `as` casts to one and `is` tests against one. (The
+     * right-hand side of a `type Name = …` declaration is a type as well, but
+     * nothing about the token before a `fn` there says so: the scan tracks
+     * that line by line.) Notably absent are `,` and `(` —
      * an anonymous function passed as an argument (`map(xs, fn(x) … end)`)
      * follows those, and it really is a block.
      */
-    private val TYPE_POSITION = setOf(":", "->", "<", "as")
+    private val TYPE_POSITION = setOf(":", "->", "<", "as", "is")
 
     /**
      * The indent the line spanning `[lineStart, lineEnd)` of [text] should have.
@@ -180,6 +183,10 @@ object SauleIndentModel {
         var previous: String? = null
         var beforePrevious: String? = null
         var previousStart = 0
+        // Inside `type Name = …`, where every `fn` is a type and opens
+        // nothing. An alias is one line and begins it — `type`, or
+        // `export type` — so this lasts until the next line break.
+        var inAlias = false
         while (true) {
             val type: IElementType = lexer.tokenType ?: break
             val start = lexer.tokenStart
@@ -192,7 +199,11 @@ object SauleIndentModel {
                     firstOnLine = word
                     break
                 }
-                apply(word, previous, beforePrevious, stack, newLine)
+                if (newLine || previous == null) inAlias = false
+                if (word == "type" && (newLine || previous == null || previous == "export")) {
+                    inAlias = true
+                }
+                apply(word, previous, beforePrevious, stack, newLine, inAlias)
                 beforePrevious = previous
                 previous = word
                 previousStart = start
@@ -235,6 +246,7 @@ object SauleIndentModel {
         beforePrevious: String?,
         stack: ArrayList<Frame>,
         newLine: Boolean,
+        inAlias: Boolean,
     ) {
         if (previous == "then" && !newLine && stack.lastOrNull() == Frame.CASE) {
             stack[stack.lastIndex] = Frame.INLINE_CASE
@@ -252,7 +264,10 @@ object SauleIndentModel {
                     below != Frame.FN_HEADER && below != Frame.INTERFACE
                 // `(fn() -> T)?` after a `:` is a type in brackets.
                 val bracketedType = previous == "(" && beforePrevious in TYPE_POSITION
+                // `v is not fn() -> nil`: the `not` belongs to the `is`.
+                val negatedTest = previous == "not" && beforePrevious == "is"
                 if (stack.lastOrNull() != Frame.INTERFACE && !bracketedType &&
+                    !inAlias && !negatedTest &&
                     (namedValue || previous !in TYPE_POSITION)
                 ) {
                     pushBlock(stack, Frame.FN_HEADER)

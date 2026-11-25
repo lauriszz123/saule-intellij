@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.32
+
+### Added
+
+- Highlighting for `type` and `is`, which Saule 26.32 reserves: `type Name = T` declares an alias, and `v is T` tests a type.
+- A `fn` type in an alias (`type Handler = fn() -> nil`) or after `is` no longer indents the next line as if it opened a block.
+
 ## 26.20
 
 ### Security

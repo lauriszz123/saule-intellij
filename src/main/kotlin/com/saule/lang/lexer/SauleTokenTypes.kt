@@ -59,10 +59,10 @@ object SauleTokenTypes {
         "match", "case", "when",
     )
     val DECL_KEYWORDS = setOf(
-        "class", "interface", "enum", "fn", "local", "static", "export",
+        "class", "interface", "enum", "type", "fn", "local", "static", "export",
         "import", "from", "as", "extends", "implements",
     )
-    val OPERATOR_KEYWORDS = setOf("and", "or", "not")
+    val OPERATOR_KEYWORDS = setOf("and", "or", "not", "is")
     val SELF_KEYWORDS = setOf("self", "super")
     val CONSTANT_KEYWORDS = setOf("true", "false", "nil")
     // No `function`: a function's type is its signature, written `fn(...) -> T`,
